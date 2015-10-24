@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoTHubAmqp", "IoTHubAmqp\IoTHubAmqp.csproj", "{5EB27691-576F-4044-B32C-92507859DFC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoTHubAmqp.NetMf", "IoTHubAmqp.NetMf\IoTHubAmqp.NetMf.csproj", "{C2B9117A-5642-4755-A77B-F4E89ADA54F9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5EB27691-576F-4044-B32C-92507859DFC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EB27691-576F-4044-B32C-92507859DFC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EB27691-576F-4044-B32C-92507859DFC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EB27691-576F-4044-B32C-92507859DFC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2B9117A-5642-4755-A77B-F4E89ADA54F9}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
