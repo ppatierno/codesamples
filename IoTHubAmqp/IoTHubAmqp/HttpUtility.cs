@@ -6,7 +6,7 @@ namespace IoTHubAmqp
     using System;
     using System.Text;
 
-    class HttpUtility
+    public static class HttpUtility
     {
         public static string UrlEncode(string str)
         {
