@@ -1,21 +1,22 @@
 ﻿using Amqp;
 using Amqp.Framing;
+using IoTHubAmqp;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
-#if NETMF
-using Microsoft.SPOT;
-#endif
 
-namespace IoTHubAmqp
+namespace IoTHubAmqpService
 {
     class Program
     {
         private const string HOST = "[IOT_HUB_NAME].azure-devices.net";
         private const int PORT = 5671;
+        private const string SHARED_ACCESS_KEY_NAME = "[SHARED_ACCESS_KEY_NAME]";
+        private const string SHARED_ACCESS_KEY = "[SHARED_ACCESS_KEY]";
+
         private const string DEVICE_ID = "[DEVICE_ID]";
-        private const string DEVICE_KEY = "[DEVICE_KEY]";
 
         private static Address address;
         private static Connection connection;
@@ -26,29 +27,17 @@ namespace IoTHubAmqp
         static void Main(string[] args)
         {
             Amqp.Trace.TraceLevel = Amqp.TraceLevel.Frame | Amqp.TraceLevel.Verbose;
-#if NETMF
-            Amqp.Trace.TraceListener = (f, a) => Debug.Print(DateTime.Now.ToString("[hh:ss.fff]") + " " + Fx.Format(f, a));
-#else
             Amqp.Trace.TraceListener = (f, a) => System.Diagnostics.Trace.WriteLine(DateTime.Now.ToString("[hh:ss.fff]") + " " + Fx.Format(f, a));
-#endif
+
             address = new Address(HOST, PORT, null, null);
             connection = new Connection(address);
-
-            string audience = Fx.Format("{0}/devices/{1}", HOST, DEVICE_ID);
-            string resourceUri = Fx.Format("{0}/devices/{1}", HOST, DEVICE_ID);
             
-            string sasToken = GetSharedAccessSignature(null, DEVICE_KEY, resourceUri, new TimeSpan(1, 0, 0));
-            bool cbs = PutCbsToken(connection, HOST, sasToken, audience);
+            session = new Session(connection);
 
-            if (cbs)
-            {
-                session = new Session(connection);
-
-                SendEvent();
-                receiverThread = new Thread(ReceiveCommands);
-                receiverThread.Start();
-            }
-
+            SendCommand();
+            receiverThread = new Thread(ReceiveFeedback);
+            receiverThread.Start();
+            
             // just as example ...
             // the application ends only after received a command or timeout on receiving
             receiverThread.Join();
@@ -57,33 +46,60 @@ namespace IoTHubAmqp
             connection.Close();
         }
 
-        static private void SendEvent()
+        static private void SendCommand()
         {
-            string entity = Fx.Format("/devices/{0}/messages/events", DEVICE_ID);
+            string audience = Fx.Format("{0}/messages/devicebound", HOST);
+            string resourceUri = Fx.Format("{0}/messages/devicebound", HOST);
 
-            SenderLink senderLink = new SenderLink(session, "sender-link", entity);
+            string sasToken = GetSharedAccessSignature(SHARED_ACCESS_KEY_NAME, SHARED_ACCESS_KEY, resourceUri, new TimeSpan(1, 0, 0));
+            bool cbs = PutCbsToken(connection, HOST, sasToken, audience);
 
-            var messageValue = Encoding.UTF8.GetBytes("i am a message.");
-            Message message = new Message()
+            if (cbs)
             {
-                BodySection = new Data() { Binary = messageValue }
-            };
+                string to = Fx.Format("/devices/{0}/messages/devicebound", DEVICE_ID);
+                string entity = "/messages/devicebound";
 
-            senderLink.Send(message);
-            senderLink.Close();
+                SenderLink senderLink = new SenderLink(session, "sender-link", entity);
+
+                var messageValue = Encoding.UTF8.GetBytes("i am a command.");
+                Message message = new Message()
+                {
+                    BodySection = new Data() { Binary = messageValue }
+                };
+                message.Properties = new Properties();
+                message.Properties.To = to;
+                message.Properties.MessageId = Guid.NewGuid().ToString();
+                message.ApplicationProperties = new ApplicationProperties();
+                message.ApplicationProperties["iothub-ack"] = "full";
+
+                senderLink.Send(message);
+                senderLink.Close();
+            }
         }
 
-        static private void ReceiveCommands()
+        static private void ReceiveFeedback()
         {
-            string entity = Fx.Format("/devices/{0}/messages/deviceBound", DEVICE_ID);
+            string audience = Fx.Format("{0}/messages/servicebound/feedback", HOST);
+            string resourceUri = Fx.Format("{0}/messages/servicebound/feedback", HOST);
 
-            ReceiverLink receiveLink = new ReceiverLink(session, "receive-link", entity);
+            string sasToken = GetSharedAccessSignature(SHARED_ACCESS_KEY_NAME, SHARED_ACCESS_KEY, resourceUri, new TimeSpan(1, 0, 0));
+            bool cbs = PutCbsToken(connection, HOST, sasToken, audience);
 
-            Message received = receiveLink.Receive();
-            if (received != null)
-                receiveLink.Accept(received);
-                
-            receiveLink.Close();
+            if (cbs)
+            {
+                string entity = "/messages/servicebound/feedback";
+
+                ReceiverLink receiveLink = new ReceiverLink(session, "receive-link", entity);
+
+                Message received = receiveLink.Receive();
+                if (received != null)
+                {
+                    receiveLink.Accept(received);
+                    System.Diagnostics.Trace.WriteLine(Encoding.UTF8.GetString(received.GetBody<byte[]>()));
+                }
+
+                receiveLink.Close();
+            }
         }
 
         static private bool PutCbsToken(Connection connection, string host, string shareAccessSignature, string audience)
@@ -166,6 +182,5 @@ namespace IoTHubAmqp
                     HttpUtility.UrlEncode(expiry));
             }
         }
-        
     }
 }
